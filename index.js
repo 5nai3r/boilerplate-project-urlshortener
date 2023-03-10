@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const dns = require('dns');
 
 // Basic Configuration
 const port = process.env.PORT || 3000;
@@ -24,9 +25,16 @@ app.get('/api/shorturl/:id', function(req, res) {
 });
 
 app.post('/api/shorturl', function(req, res) {
-  urls.push(req.body.url);
-  res.redirect("/")
-  console.log(urls);
+  const domain = req.body.url.replace(/^https?:\/\/([^\/]+).*/, '$1');
+  dns.lookup(domain,{all:true},(err,adress) =>{
+    if(err) return res.json({ error: 'invalid url' })
+    const urlId = urls.length;
+    urls.push(req.body.url);
+    res.json({
+      original_url: req.body.url,
+      short_url: urlId
+    })
+  })
 });
 
 app.listen(port, function() {
